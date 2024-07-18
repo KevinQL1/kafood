@@ -5,7 +5,8 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import logger from './utils/logger.js';
-import usersRouter from './routes/userRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import roleRoutes from './routes/roleRoutes.js';
 
 dotenv.config();
 
@@ -17,7 +18,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.use(morgan('dev'));
-app.use('/users', usersRouter);
+
+// Rutas
+app.use('/api/users', userRoutes);
+app.use('/api/roles', roleRoutes);
 
 
 app.listen(port, () => {

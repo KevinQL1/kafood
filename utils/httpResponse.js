@@ -1,12 +1,12 @@
 export const serverError = (path = '/') => ({
     statusCode: 500,
-    body: JSON.stringify({
+    body: {
         type: 'urn:problem:server-error',
         title: 'Server Error',
         detail: 'An unexpected error has occurred, contact the administrator.',
         status: 500,
         instance: path
-    }),
+    },
     headers: {
         'Content-Type': 'application/problem+json'
     }
@@ -23,7 +23,7 @@ export const media = (data, headers) => ({
 
 export const ok = (body) => ({
     statusCode: 200,
-    body: JSON.stringify(body),
+    body,
     headers: {
         'Content-Type': 'application/json'
     }
@@ -31,13 +31,13 @@ export const ok = (body) => ({
 
 export const badRequest = (error) => (path = '/') => ({
     statusCode: 400,
-    body: JSON.stringify({
+    body: {
         type: 'urn:problem:bad-request',
         title: 'Bad Request',
         detail: error.message,
         status: 400,
         instance: path
-    }),
+    },
     headers: {
         'Content-Type': 'application/problem+json'
     }
@@ -45,13 +45,13 @@ export const badRequest = (error) => (path = '/') => ({
 
 export const notFound = (error) => (path = '/') => ({
     statusCode: 404,
-    body: JSON.stringify({
+    body: {
         type: 'urn:problem:not-found',
         title: 'Not Found',
         detail: error.message,
         status: 404,
         instance: path
-    }),
+    },
     headers: {
         'Content-Type': 'application/problem+json'
     }
@@ -59,13 +59,13 @@ export const notFound = (error) => (path = '/') => ({
 
 export const conflict = (error) => (path = '/') => ({
     statusCode: 409,
-    body: JSON.stringify({
+    body: {
         type: 'urn:problem:conflict',
         title: 'Conflict',
         detail: error.message,
         status: 409,
         instance: path
-    }),
+    },
     headers: {
         'Content-Type': 'application/problem+json'
     }
@@ -73,13 +73,13 @@ export const conflict = (error) => (path = '/') => ({
 
 export const unauthorized = (error) => (path = '/') => ({
     statusCode: 401,
-    body: JSON.stringify({
+    body: {
         type: 'urn:problem:unauthorized',
         title: 'Unauthorized',
         detail: error.message,
         status: 401,
         instance: path
-    }),
+    },
     headers: {
         'Content-Type': 'application/problem+json'
     }
