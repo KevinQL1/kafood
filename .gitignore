@@ -1,0 +1,23 @@
+# Node.js y npm
+npm-debug.log
+yarn-error.log
+
+# Archivos de configuración
+.env
+
+# IDEs y editores
+.vscode/
+.idea/
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+
+# Ignorar todos los archivos que terminen con .env.local
+**/.env.local
+
+# Ignorar todos los archivos con la extensión .log en todas las carpetas
+/**/*.log
+
+# Ignorar todos los archivos de caché de los módulos de node.js
+node_modules/
