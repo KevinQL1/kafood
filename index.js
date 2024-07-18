@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import logger from './utils/logger.js';
-import usersRouter from './routes/users.js';
+import usersRouter from './routes/userRoutes.js';
 
 dotenv.config();
 

@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import User from '../models/User.js';
 import { ok, badRequest, notFound, serverError, unauthorized } from '../utils/httpResponse.js';
 
@@ -29,7 +30,8 @@ export const getUserById = async (req, res) => {
 export const createUser = async (req, res) => {
     const { username, email, password } = req.body;
     try {
-        const newUser = new User({ username, email, password });
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new User({ username, email, password: hashedPassword });
         await newUser.save();
         return res.status(ok(newUser).statusCode).json(ok(newUser));
     } catch (error) {
