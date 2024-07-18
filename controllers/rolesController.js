@@ -1,6 +1,14 @@
-import Role from '../models/Role.js';
+import Role from '../schemas/RoleSchema.js';
 import { ok, badRequest, serverError, notFound, unauthorized } from '../utils/httpResponse.js';
 import logger from '../utils/logger.js';
+
+let lastRoleId = 1;
+
+// Obtener el último ID de rol
+const getLastRoleId = async () => {
+    const lastRole = await Role.findOne({}, {}, { sort: { 'idRol': -1 } });
+    return lastRole ? lastRole.idRol : 0;
+};
 
 // Obtener todos los roles
 export const getRoles = async (req, res) => {
@@ -17,13 +25,14 @@ export const getRoles = async (req, res) => {
 // Obtener un rol por su ID
 export const getRoleById = async (req, res) => {
     const { id } = req.params;
+    const idRol = parseInt(id);
 
     try {
-        const role = await Role.findById(id);
+        const role = await Role.findOne({ idRol });
 
         if (!role) {
             logger.error('An error has occurred: Role not found')
-            return res.status(notFound(req.path).statusCode).json(notFound(req.path).body);
+            return res.status(notFound({ message: 'Role not found' })(req.path).statusCode).json(notFound({ message: 'Role not found' })(req.path).body);
         }
 
         logger.info('Role retrieved successfully')
@@ -52,9 +61,17 @@ export const createRole = async (req, res) => {
             return res.status(badRequest({ message: `Role '${rolName}' already exists` })(req.path).statusCode).json(badRequest({ message: `Role '${rolName}' already exists` })(req.path).body);
         }
 
-        // Crear el nuevo rol
-        const newRole = new Role({ rolName });
+        // Obtener el último ID de rol
+        if (lastRoleId === 1) {
+            lastRoleId = await getLastRoleId();
+        }
+
+        // Crear el nuevo rol con el ID autoincrementado
+        const newRole = new Role({ idRol: lastRoleId + 1, rolName });
         await newRole.save();
+
+        // Incrementar el lastRoleId para el siguiente rol
+        lastRoleId++;
 
         logger.info('Role created successfully');
         return res.status(ok(newRole).statusCode).json(ok(newRole).body);
@@ -67,20 +84,21 @@ export const createRole = async (req, res) => {
 // Actualizar un rol por su ID
 export const updateRole = async (req, res) => {
     const { id } = req.params;
+    const idRol = parseInt(id);
     const { rolName } = req.body;
 
     try {
         // Verificar si el rolName está permitido
-        if (!['cliente', 'administrador', 'soporte', 'repartidor'].includes(rolName)) {
+        if (!['Cliente', 'Administrador', 'Soporte', 'Repartidor'].includes(rolName)) {
             logger.error('An error has occurred: Role not allowed')
-            return res.status(badRequest('Role not allowed')(req.path).statusCode).json(badRequest('Role not allowed')(req.path).body);
+            return res.status(badRequest({ message: 'Role not allowed' })(req.path).statusCode).json(badRequest({ message: 'Role not allowed' })(req.path).body);
         }
 
-        const updatedRole = await Role.findByIdAndUpdate(id, { rolName }, { new: true });
+        const updatedRole = await Role.findOneAndUpdate({ idRol }, { rolName }, { new: true });
 
         if (!updatedRole) {
             logger.error('An error has occurred: Role not found')
-            return res.status(notFound(req.path).statusCode).json(notFound(req.path).body);
+            return res.status(notFound({ message: 'Role not found' })(req.path).statusCode).json(notFound({ message: 'Role not found' })(req.path).body);
         }
 
         logger.info('Role updated successfully')
@@ -94,17 +112,18 @@ export const updateRole = async (req, res) => {
 // Eliminar un rol por su ID
 export const deleteRole = async (req, res) => {
     const { id } = req.params;
+    const idRol = parseInt(id);
 
     try {
-        const deletedRole = await Role.findByIdAndDelete(id);
+        const deletedRole = await Role.findOneAndDelete({ idRol });
 
         if (!deletedRole) {
             logger.error('An error has occurred: Role not found')
-            return res.status(notFound(req.path).statusCode).json(notFound(req.path).body);
+            return res.status(notFound({ message: 'Role not found' })(req.path).statusCode).json(notFound({ message: 'Role not found' })(req.path).body);
         }
 
         logger.info('Role deleted successfully')
-        return res.status(ok({ message: 'Successfully deleted role' }).statusCode).json(ok({ message: 'Successfully deleted role' }));
+        return res.status(ok({ message: 'Successfully deleted role' }).statusCode).json(ok({ message: 'Successfully deleted role' }).body);
     } catch (error) {
         logger.error(`An error has occurred: ${error.message}`)
         return res.status(serverError(req.path).statusCode).json(serverError(req.path).body);

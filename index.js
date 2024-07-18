@@ -4,10 +4,10 @@ import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import connectDB from './config/mongoose.js'
 import logger from './utils/logger.js';
 import userRoutes from './routes/userRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
-import connectDB from './config/mongoose.js'
 
 dotenv.config();
 

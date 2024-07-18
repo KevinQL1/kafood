@@ -19,5 +19,7 @@ Thumbs.db
 # Ignorar todos los archivos con la extensión .log en todas las carpetas
 /**/*.log
 
-# Ignorar todos los archivos de caché de los módulos de node.js
+# Ignorar todos los archivos de caché de los módulos de node.js y carpetas no necesarias para su subida
 node_modules/
+logs/
+
