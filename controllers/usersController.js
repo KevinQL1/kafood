@@ -9,7 +9,7 @@ export const getUsers = async (req, res) => {
     try {
         const users = await User.find();
         logger.info('Users retrieved successfully')
-        return res.status(ok(users).statusCode).json(ok(users));
+        return res.status(ok(users).statusCode).json(ok(users).body);
     } catch (error) {
         logger.error(`An error has occurred: ${error.message}`)
         return res.status(serverError(req.path).statusCode).json(serverError(req.path).body);
@@ -26,7 +26,7 @@ export const getUserById = async (req, res) => {
             return res.status(notFound({ message: 'User not found' })(req.path).statusCode).json(notFound({ message: 'User not found' })(req.path).body);
         }
         logger.info('User retrieved successfully')
-        return res.status(ok(user).statusCode).json(ok(user));
+        return res.status(ok(user).statusCode).json(ok(user).body);
     } catch (error) {
         logger.error(`An error has occurred: ${error.message}`)
         return res.status(serverError(req.path).statusCode).json(serverError(req.path).body);
@@ -35,7 +35,7 @@ export const getUserById = async (req, res) => {
 
 // Crear un nuevo usuario
 export const createUser = async (req, res) => {
-    const { username, email, password, rol } = req.body;
+    const { name, email, password, rol } = req.body;
 
     try {
         // Verificar si el rol existe
@@ -47,15 +47,15 @@ export const createUser = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ username, email, password: hashedPassword });
+        const newUser = new User({ name, email, password: hashedPassword });
         await newUser.save();
 
         logger.info('User created successfully')
-        return res.status(ok(newUser).statusCode).json(ok(newUser));
+        return res.status(ok(newUser).statusCode).json(ok(newUser).body);
     } catch (error) {
         if (error.code === 11000) {
             logger.error(`An error has occurred: ${error.message}`)
-            return res.status(badRequest({ message: 'Username or email already exists' })(req.path).statusCode).json(badRequest({ message: 'Username or email already exists' })(req.path).body);
+            return res.status(badRequest({ message: 'email already exists' })(req.path).statusCode).json(badRequest({ message: 'email already exists' })(req.path).body);
         }
         logger.error(`An error has occurred: ${error.message}`)
         return res.status(badRequest(error)(req.path).statusCode).json(badRequest(error)(req.path).body);
@@ -65,9 +65,9 @@ export const createUser = async (req, res) => {
 // Actualizar un usuario por su ID
 export const updateUser = async (req, res) => {
     const { id } = req.params;
-    const { username, email, password, rol } = req.body;
+    const { name, email, password, rol } = req.body;
     try {
-        let updatedFields = { username, email };
+        let updatedFields = { name, email };
 
         // Verificar y cifrar la nueva contraseña si se proporciona
         if (password) {
@@ -94,7 +94,7 @@ export const updateUser = async (req, res) => {
         }
 
         logger.info('User updated successfully')
-        return res.status(ok(updatedUser).statusCode).json(ok(updatedUser));
+        return res.status(ok(updatedUser).statusCode).json(ok(updatedUser).body);
     } catch (error) {
         logger.error(`An error has occurred: ${error.message}`)
         return res.status(badRequest(error)(req.path).statusCode).json(badRequest(error)(req.path).body);

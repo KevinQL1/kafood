@@ -7,12 +7,17 @@ import dotenv from 'dotenv';
 import logger from './utils/logger.js';
 import userRoutes from './routes/userRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
+import connectDB from './config/mongoose.js'
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Conexión a MongoDB
+connectDB();
+
+// Middlewares
 app.use(helmet());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -20,8 +25,8 @@ app.use(cors());
 app.use(morgan('dev'));
 
 // Rutas
-app.use('/api/users', userRoutes);
-app.use('/api/roles', roleRoutes);
+app.use('/api', userRoutes);
+app.use('/api', roleRoutes);
 
 
 app.listen(port, () => {

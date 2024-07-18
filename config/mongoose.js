@@ -4,14 +4,13 @@ import logger from '../utils/logger.js';
 
 dotenv.config();
 
+const MONGODB_URI = process.env.MONGODB_URI;
+
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      useCreateIndex: true,
-    });
-    logger.info(`Connected to MongoDB: ${conn.connection.host}`);
+    await mongoose.connect(MONGODB_URI);
+
+    logger.info(`Connected to MongoDB: ${mongoose.connection.host}`);
   } catch (error) {
     logger.error(`MongoDB connection error: ${error.message}`);
     process.exit(1);

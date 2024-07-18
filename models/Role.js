@@ -5,7 +5,7 @@ const roleSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        enum: ['cliente', 'administrador', 'soporte', 'repartidor'] // Valores permitidos
+        enum: ['Cliente', 'Administrador', 'Soporte', 'Repartidor'] // Valores permitidos
     }
 });
 

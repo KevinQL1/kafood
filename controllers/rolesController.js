@@ -7,7 +7,7 @@ export const getRoles = async (req, res) => {
     try {
         const roles = await Role.find();
         logger.info('Roles retrieved successfully')
-        return res.status(ok(roles).statusCode).json(ok(roles));
+        return res.status(ok(roles).statusCode).json(ok(roles).body);
     } catch (error) {
         logger.error(`An error has occurred: ${error.message}`)
         return res.status(serverError(req.path).statusCode).json(serverError(req.path).body);
@@ -27,7 +27,7 @@ export const getRoleById = async (req, res) => {
         }
 
         logger.info('Role retrieved successfully')
-        return res.status(ok(role).statusCode).json(ok(role));
+        return res.status(ok(role).statusCode).json(ok(role).body);
     } catch (error) {
         logger.error(`An error has occurred: ${error.message}`)
         return res.status(serverError(req.path).statusCode).json(serverError(req.path).body);
@@ -40,19 +40,26 @@ export const createRole = async (req, res) => {
 
     try {
         // Verificar si el rolName está permitido
-        if (!['cliente', 'administrador', 'soporte', 'repartidor'].includes(rolName)) {
-            logger.error('An error has occurred: Role not allowed')
-            return res.status(badRequest('Role not allowed')(req.path).statusCode).json(badRequest('Role not allowed')(req.path).body);
+        if (!['Cliente', 'Administrador', 'Soporte', 'Repartidor'].includes(rolName)) {
+            logger.error('An error has occurred: Role not allowed');
+            return res.status(badRequest({ message: 'Role not allowed' })(req.path).statusCode).json(badRequest({ message: 'Role not allowed' })(req.path).body);
+        }
+
+        // Verificar si el rol ya existe en la base de datos
+        const existingRole = await Role.findOne({ rolName });
+        if (existingRole) {
+            logger.error(`An error has occurred: Role '${rolName}' already exists`);
+            return res.status(badRequest({ message: `Role '${rolName}' already exists` })(req.path).statusCode).json(badRequest({ message: `Role '${rolName}' already exists` })(req.path).body);
         }
 
         // Crear el nuevo rol
         const newRole = new Role({ rolName });
         await newRole.save();
 
-        logger.info('Role created successfully')
-        return res.status(ok(newRole).statusCode).json(ok(newRole));
+        logger.info('Role created successfully');
+        return res.status(ok(newRole).statusCode).json(ok(newRole).body);
     } catch (error) {
-        logger.error(`An error has occurred: ${error.message}`)
+        logger.error(`An error has occurred: ${error.message}`);
         return res.status(serverError(req.path).statusCode).json(serverError(req.path).body);
     }
 };
@@ -70,14 +77,14 @@ export const updateRole = async (req, res) => {
         }
 
         const updatedRole = await Role.findByIdAndUpdate(id, { rolName }, { new: true });
-        
+
         if (!updatedRole) {
             logger.error('An error has occurred: Role not found')
             return res.status(notFound(req.path).statusCode).json(notFound(req.path).body);
         }
 
         logger.info('Role updated successfully')
-        return res.status(ok(updatedRole).statusCode).json(ok(updatedRole));
+        return res.status(ok(updatedRole).statusCode).json(ok(updatedRole).body);
     } catch (error) {
         logger.error(`An error has occurred: ${error.message}`)
         return res.status(serverError(req.path).statusCode).json(serverError(req.path).body);
