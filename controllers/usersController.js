@@ -1,12 +1,17 @@
 import bcrypt from 'bcrypt';
 import User from '../schemas/UserSchema.js';
-import { ok, badRequest, notFound, serverError, unauthorized } from '../utils/httpResponse.js';
+import { ok, badRequest, notFound, serverError, unauthorized, forbidden } from '../utils/httpResponse.js';
 import logger from '../utils/logger.js';
 import Role from '../schemas/RoleSchema.js';
 
 // Obtener todos los usuarios
 export const getUsers = async (req, res) => {
     try {
+        if (req.user.rol.rolName !== 'Administrador') {
+            return res.status(forbidden({ message: 'Access denied' })(req.path).statusCode)
+                .json(forbidden({ message: 'Access denied' })(req.path).body);
+        }
+
         const users = await User.find();
         logger.info('Users retrieved successfully');
         return res.status(ok(users).statusCode).json(ok(users).body);
@@ -20,12 +25,20 @@ export const getUsers = async (req, res) => {
 export const getUserById = async (req, res) => {
     const { id } = req.params;
     const idClient = parseInt(id);
+
     try {
+        if (req.user.rol.rolName === 'Cliente' || req.user.rol.rolName === 'Repartidor') {
+            return res.status(forbidden({ message: 'Access denied' })(req.path).statusCode)
+                .json(forbidden({ message: 'Access denied' })(req.path).body);
+        }
+
         const user = await User.findOne({ idClient });
         if (!user) {
             logger.error('An error has occurred: User not found');
-            return res.status(notFound({ message: 'User not found' })(req.path).statusCode).json(notFound({ message: 'User not found' })(req.path).body);
+            return res.status(notFound({ message: 'User not found' })(req.path).statusCode)
+                .json(notFound({ message: 'User not found' })(req.path).body);
         }
+
         logger.info('User retrieved successfully');
         return res.status(ok(user).statusCode).json(ok(user).body);
     } catch (error) {
@@ -39,7 +52,13 @@ export const createUser = async (req, res) => {
     const { idClient, name, email, password, idRol, birthdate } = req.body;
 
     try {
-        // Verificar si el rol existe
+        if (req.user.rol.rolName !== 'Administrador') {
+            if (req.user.idClient !== idClient) {
+                return res.status(forbidden({ message: 'Access denied' })(req.path).statusCode)
+                    .json(forbidden({ message: 'Access denied' })(req.path).body);
+            }
+        }
+
         const existingRole = await Role.findOne({ idRol });
         if (!existingRole) {
             logger.error('An error has occurred: The specified role does not exist');
@@ -47,10 +66,8 @@ export const createUser = async (req, res) => {
                 .json(notFound({ message: 'The specified role does not exist' })(req.path).body);
         }
 
-        //Cifrar la contraseña
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Crear el nuevo usuario con los datos completos del rol
         const newUser = new User({
             idClient,
             name,
@@ -70,26 +87,13 @@ export const createUser = async (req, res) => {
     } catch (error) {
         if (error.code === 11000) {
             logger.error(`An error has occurred: ${error.message}`);
-            return res.status(badRequest({ message: 'User or email already exists' })(req.path).statusCode).json(badRequest({ message: 'User or email already exists' })(req.path).body);
+            return res.status(badRequest({ message: 'User or email already exists' })(req.path).statusCode)
+                .json(badRequest({ message: 'User or email already exists' })(req.path).body);
         }
         logger.error(`An error has occurred: ${error.message}`);
-        return res.status(badRequest(error)(req.path).statusCode).json(badRequest(error)(req.path).body);
+        return res.status(badRequest(error)(req.path).statusCode)
+            .json(badRequest(error)(req.path).body);
     }
-};
-
-const compareObjects = (oldObj, newObj) => {
-    for (const key in oldObj) {
-        if (newObj.hasOwnProperty(key)) {
-            if (key === 'birthdate') {
-                const oldDate = new Date(oldObj[key]).toISOString().split('T')[0];
-                const newDate = new Date(newObj[key]).toISOString().split('T')[0];
-                if (oldDate !== newDate) return false;
-            } else if (typeof oldObj[key] === 'object' && oldObj[key] !== null) {
-                if (!compareObjects(oldObj[key], newObj[key])) return false;
-            } else if (oldObj[key] !== newObj[key]) return false;
-        }
-    }
-    return true;
 };
 
 // Actualizar un usuario por su ID
@@ -107,6 +111,28 @@ export const updateUser = async (req, res) => {
                 .json(notFound({ message: 'User not found' })(req.path).body);
         }
 
+        // Validación basada en el rol del usuario
+        if (req.user.rol.rolName === 'Cliente' || req.user.rol.rolName === 'Repartidor') {
+            if (req.user.idClient !== idClient) {
+                return res.status(forbidden({ message: 'Access denied' })(req.path).statusCode)
+                    .json(forbidden({ message: 'Access denied' })(req.path).body);
+            }
+            // Solo se puede actualizar el nombre y la contraseña
+            if (email || birthdate || idRol) {
+                return res.status(forbidden({ message: 'Access denied' })(req.path).statusCode)
+                    .json(forbidden({ message: 'Access denied' })(req.path).body);
+            }
+        } else if (req.user.rol.rolName === 'Soporte') {
+            // Soporte puede actualizar cualquier campo excepto idClient y email
+            if (idRol || email) {
+                return res.status(forbidden({ message: 'Access denied' })(req.path).statusCode)
+                    .json(forbidden({ message: 'Access denied' })(req.path).body);
+            }
+        } else if (req.user.rol.rolName !== 'Administrador') {
+            return res.status(forbidden({ message: 'Access denied' })(req.path).statusCode)
+                .json(forbidden({ message: 'Access denied' })(req.path).body);
+        }
+
         let updatedFields = {};
 
         if (password) {
@@ -119,23 +145,22 @@ export const updateUser = async (req, res) => {
             updatedFields.password = await bcrypt.hash(password, 10);
         }
 
-        const existingRole = await Role.findOne({ idRol });
-        if (!existingRole) {
-            logger.error('An error has occurred: The specified role does not exist');
-            return res.status(notFound({ message: 'The specified role does not exist' })(req.path).statusCode)
-                .json(notFound({ message: 'The specified role does not exist' })(req.path).body);
-        }
-
-        if (name && name !== findUser.name) updatedFields.name = name;
-        if (email && email !== findUser.email) updatedFields.email = email;
-        if (birthdate && new Date(birthdate).toISOString().split('T')[0] !== findUser.birthdate.toISOString().split('T')[0]) {
-            updatedFields.birthdate = birthdate;
-        }
-        if (idRol && idRol !== findUser.rol.idRol) {
+        if (idRol) {
+            const existingRole = await Role.findOne({ idRol });
+            if (!existingRole) {
+                return res.status(notFound({ message: 'The specified role does not exist' })(req.path).statusCode)
+                    .json(notFound({ message: 'The specified role does not exist' })(req.path).body);
+            }
             updatedFields.rol = {
                 idRol: existingRole.idRol,
                 rolName: existingRole.rolName
             };
+        }
+
+        if (name && name !== findUser.name) updatedFields.name = name;
+        if (email && email !== findUser.email && req.user.rol.rolName !== 'Soporte') updatedFields.email = email;
+        if (birthdate && new Date(birthdate).toISOString().split('T')[0] !== findUser.birthdate.toISOString().split('T')[0]) {
+            updatedFields.birthdate = birthdate;
         }
 
         const oldUser = { name: findUser.name, email: findUser.email, password: findUser.password, birthdate: findUser.birthdate, rol: findUser.rol };
@@ -151,7 +176,8 @@ export const updateUser = async (req, res) => {
         return res.status(ok(updatedUser).statusCode).json(ok(updatedUser).body);
     } catch (error) {
         logger.error(`An error has occurred: ${error.message}`);
-        return res.status(badRequest(error)(req.path).statusCode).json(badRequest(error)(req.path).body);
+        return res.status(badRequest(error)(req.path).statusCode)
+            .json(badRequest(error)(req.path).body);
     }
 };
 
@@ -161,15 +187,52 @@ export const deleteUser = async (req, res) => {
     const idClient = parseInt(id);
 
     try {
+        if (req.user.rol.rolName !== 'Administrador') {
+            return res.status(forbidden({ message: 'Access denied' })(req.path).statusCode)
+                .json(forbidden({ message: 'Access denied' })(req.path).body);
+        }
+
         const deletedUser = await User.findOneAndDelete({ idClient });
         if (!deletedUser) {
             logger.error('An error has occurred: User not found');
-            return res.status(notFound({ message: 'User not found' })(req.path).statusCode).json(notFound({ message: 'User not found' })(req.path).body);
+            return res.status(notFound({ message: 'User not found' })(req.path).statusCode)
+                .json(notFound({ message: 'User not found' })(req.path).body);
         }
+
         logger.info('User deleted successfully');
-        return res.status(ok({ message: 'Successfully deleted user' }).statusCode).json(ok({ message: 'Successfully deleted user' }).body);
+        return res.status(ok({ message: 'Successfully deleted user' }).statusCode)
+            .json(ok({ message: 'Successfully deleted user' }).body);
     } catch (error) {
         logger.error(`An error has occurred: ${error.message}`);
-        return res.status(badRequest(error)(req.path).statusCode).json(badRequest(error)(req.path).body);
+        return res.status(badRequest(error)(req.path).statusCode)
+            .json(badRequest(error)(req.path).body);
+    }
+};
+
+// Nueva función de login
+export const login = async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            logger.error('Invalid email');
+            return res.status(unauthorized({ message: 'Invalid email' })(req.path).statusCode)
+                .json(unauthorized({ message: 'Invalid email' })(req.path).body);
+        }
+
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+            logger.error('Invalid password');
+            return res.status(unauthorized({ message: 'Invalid password' })(req.path).statusCode)
+                .json(unauthorized({ message: 'Invalid password' })(req.path).body);
+        }
+
+        const token = user.generateAuthToken();
+        logger.info('User logged in successfully');
+        return res.status(ok({ token }).statusCode).json(ok({ token, expiresIn: '5m' }).body);
+    } catch (error) {
+        logger.error(`An error has occurred: ${error.message}`);
+        return res.status(serverError(req.path).statusCode).json(serverError(req.path).body);
     }
 };

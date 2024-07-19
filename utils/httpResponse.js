@@ -1,14 +1,8 @@
-export const serverError = (path = '/') => ({
-    statusCode: 500,
-    body: {
-        type: 'urn:problem:server-error',
-        title: 'Server Error',
-        detail: 'An unexpected error has occurred, contact the administrator.',
-        status: 500,
-        instance: path
-    },
+export const ok = (body) => ({
+    statusCode: 200,
+    body,
     headers: {
-        'Content-Type': 'application/problem+json'
+        'Content-Type': 'application/json'
     }
 });
 
@@ -21,14 +15,6 @@ export const media = (data, headers) => ({
     }
 });
 
-export const ok = (body) => ({
-    statusCode: 200,
-    body,
-    headers: {
-        'Content-Type': 'application/json'
-    }
-});
-
 export const badRequest = (error) => (path = '/') => ({
     statusCode: 400,
     body: {
@@ -36,6 +22,34 @@ export const badRequest = (error) => (path = '/') => ({
         title: 'Bad Request',
         detail: error.message,
         status: 400,
+        instance: path
+    },
+    headers: {
+        'Content-Type': 'application/problem+json'
+    }
+});
+
+export const unauthorized = (error) => (path = '/') => ({
+    statusCode: 401,
+    body: {
+        type: 'urn:problem:unauthorized',
+        title: 'Unauthorized',
+        detail: error.message,
+        status: 401,
+        instance: path
+    },
+    headers: {
+        'Content-Type': 'application/problem+json'
+    }
+});
+
+export const forbidden = (error) => (path = '/') => ({
+    statusCode: 403,
+    body: {
+        type: 'urn:problem:forbidden',
+        title: 'Forbidden',
+        detail: error.message,
+        status: 403,
         instance: path
     },
     headers: {
@@ -71,17 +85,16 @@ export const conflict = (error) => (path = '/') => ({
     }
 });
 
-export const unauthorized = (error) => (path = '/') => ({
-    statusCode: 401,
+export const serverError = (path = '/') => ({
+    statusCode: 500,
     body: {
-        type: 'urn:problem:unauthorized',
-        title: 'Unauthorized',
-        detail: error.message,
-        status: 401,
+        type: 'urn:problem:server-error',
+        title: 'Server Error',
+        detail: 'An unexpected error has occurred, contact the administrator.',
+        status: 500,
         instance: path
     },
     headers: {
         'Content-Type': 'application/problem+json'
     }
 });
-
