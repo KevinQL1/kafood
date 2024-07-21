@@ -1,9 +1,13 @@
 import jwt from 'jsonwebtoken';
-import { unauthorized, forbidden } from '../utils/httpResponse.js';
+import { unauthorized } from '../utils/httpResponse.js';
 import logger from '../utils/logger.js';
+import Administrator from '../schemas/UsersSchemas/AdministratorSchema';
+import Support from '../schemas/UsersSchemas/SupportSchema';
+import Customer from '../schemas/UsersSchemas/CustomerSchema';
+import Dealer from '../schemas/UsersSchemas/DealerSchema';
 
 // Middleware de Autenticación
-export const authMiddleware = (req, res, next) => {
+export const authMiddleware = async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1]; // Obtener el token del header
 
     if (!token) {
@@ -14,7 +18,25 @@ export const authMiddleware = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // Guardar la información del usuario en req.user
+
+        // Verificar en cada tabla de usuarios
+        let user = await Administrator.findOne({ _id: decoded._id, 'tokens.token': token });
+        if (!user) {
+            user = await Support.findOne({ _id: decoded._id, 'tokens.token': token });
+            if (!user) {
+                user = await Customer.findOne({ _id: decoded._id, 'tokens.token': token });
+                if (!user) {
+                    user = await Dealer.findOne({ _id: decoded._id, 'tokens.token': token });
+                }
+            }
+        }
+
+        if (!user) {
+            throw new Error('Not authenticated');
+        }
+
+        req.user = user; // Guardar la información del usuario en req.user
+        req.token = token; // Guardar el token en req.token
         next();
     } catch (error) {
         logger.error(`An error has occurred: ${error.message}`);
@@ -22,14 +44,3 @@ export const authMiddleware = (req, res, next) => {
             .json(unauthorized({ message: 'Invalid token' })(req.path).body);
     }
 };
-
-// Middleware de Autorización
-export const checkRole = (roles) => (req, res, next) => {
-    if (!roles.includes(req.user.rol.rolName)) {
-        logger.error('An error has occurred: Access denied');
-        return res.status(forbidden({ message: 'Access denied' })(req.path).statusCode)
-            .json(forbidden({ message: 'Access denied' })(req.path).body);
-    }
-    next();
-};
-
