@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { unauthorized } from '../utils/httpResponse.js';
 import logger from '../utils/logger.js';
-import Administrator from '../schemas/UsersSchemas/AdministratorSchema';
+import Administrator from '../schemas/UsersSchemas/AdminSchema.js';
 import Support from '../schemas/UsersSchemas/SupportSchema';
 import Customer from '../schemas/UsersSchemas/CustomerSchema';
 import Dealer from '../schemas/UsersSchemas/DealerSchema';

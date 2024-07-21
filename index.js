@@ -4,10 +4,19 @@ import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import connectDB from './config/mongoose.js'
+import connectDB from './config/mongoose.js';
 import logger from './utils/logger.js';
-import userRoutes from './routes/userRoutes.js';
-import roleRoutes from './routes/roleRoutes.js';
+
+// Importar rutas
+import adminRoutes from './routes/usersRoutes/adminRoutes.js';
+import supportRoutes from './routes/usersRoutes/supportRoutes.js';
+import customerRoutes from './routes/usersRoutes/customerRoutes.js';
+import deliveryRoutes from './routes/usersRoutes/deliveryRoutes.js';
+import productRoutes from './routes/productsRoutes/productRoutes.js';
+import storeRoutes from './routes/storesRoutes/storeRoutes.js';
+import deliverieRoutes from './routes/deliveriesRoutes/deliverieRoutes.js';
+import deliveryStatusRoutes from './routes/deliveriesRoutes/deliveryStatusRoutes.js';
+import orderRoutes from './routes/orderRoutes/orderRoutes.js';
 
 dotenv.config();
 
@@ -25,9 +34,15 @@ app.use(cors());
 app.use(morgan('dev'));
 
 // Rutas
-app.use('/api', userRoutes);
-app.use('/api', roleRoutes);
-
+app.use('/api', adminRoutes);
+app.use('/api', supportRoutes);
+app.use('/api', customerRoutes);
+app.use('/api', deliveryRoutes);
+app.use('/api', productRoutes);
+app.use('/api', storeRoutes);
+app.use('/api', deliverieRoutes);
+app.use('/api', deliveryStatusRoutes);
+app.use('/api', orderRoutes);
 
 app.listen(port, () => {
     logger.info(`Server running on port ${port}`);
